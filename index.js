@@ -1,5 +1,5 @@
 import express from 'express'
-import userRouter from './routes/user.routes.js'
+import balanceRouter from './routes/balance.routes.js'
 
 const PORT = process.env.PORT || 3010;
 const app = express();
@@ -10,7 +10,7 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
-app.use('/api', userRouter);
+app.use('/api', balanceRouter);
 
 app.listen(PORT, () => {
 	console.log(`Server listening on ${PORT}`);
