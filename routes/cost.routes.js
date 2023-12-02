@@ -3,7 +3,8 @@ import costController from "../controllers/cost.controller.js";
 
 const router = new Router();
 
-router.get('/cost', costController.getAllCosts)
+router.get('/costs', costController.getAllCosts)
+router.get('/costs/categories', costController.getCostCategories)
 
 export default router;
 
