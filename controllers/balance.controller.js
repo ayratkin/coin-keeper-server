@@ -36,9 +36,9 @@ class BalanceController {
     const oldBalanceCount = OldBalanceObj.wallet_balance.balance
     let newBalanceCount;
     if (type === 'profit') {
-      newBalanceCount = String(Number(oldBalanceCount) + count)
+      newBalanceCount = oldBalanceCount + count
     } else if (type === 'loss') {
-      newBalanceCount = String(Number(oldBalanceCount) - count)
+      newBalanceCount = oldBalanceCount - count
     }
 
     const updatedBalance = await prisma.wallet_balance.update({
