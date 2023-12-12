@@ -16,7 +16,38 @@ class CostController {
 
   // Новая затрата
   async addNewCost(req, res) {
+    const {categoryId, id: wallet_id, count, name} = req.body
+    await prisma.cost.create({
+      data: {
+        wallet_id: 1,
+        cost_category_id: categoryId,
+        count: count,
+        name: name
+      },
+    })
 
+    const OldBalanceObj = await prisma.wallet.findUnique({
+      where: {
+        wallet_id: wallet_id
+      },
+      include: {
+        wallet_balance: true
+      }
+    })
+
+    const oldBalanceCount = OldBalanceObj.wallet_balance.balance
+    let newBalanceCount = oldBalanceCount - count
+
+    await prisma.wallet_balance.update({
+      where: {
+        wallet_balance_id: 1,
+      },
+      data: {
+        balance: newBalanceCount,
+      },
+    })
+
+    res.json({status: 'success'})
   }
 
   async createCostCategory(req, res) {
@@ -28,7 +59,7 @@ class CostController {
       },
     })
 
-    res.json({status: 'succes'})
+    res.json({status: 'success'})
   }
 
   async getCostCategories(req, res) {
