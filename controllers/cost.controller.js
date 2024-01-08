@@ -1,21 +1,48 @@
 import {PrismaClient} from '@prisma/client'
-import {log} from "prisma/prisma-client/generator-build/index.js";
 
 const prisma = new PrismaClient()
 
 class CostController {
+  // Универсальная функция,
+  // Возвращает все категории затрат, которые не помечены, как удаленные
+  async getCostCategories(req, res) {
+    const allCostCategories = await prisma.cost_category.findMany();
+    const allCosts = await prisma.cost.findMany()
+
+    // Высчитываем сколько было затрат для каждой категории
+    // Возваращаем дополненный суммой затрат объекты
+    const allCostCategoriesWithBalance = allCostCategories.map((costCategory) => {
+      const categoryCosts = allCosts.filter(cost => cost.cost_category_id === costCategory.cost_category_id)
+
+      let categoryCostSum = 0;
+      categoryCosts.forEach((cost) => {
+        categoryCostSum += cost.count
+      })
+
+      return {
+        ...costCategory,
+        count: categoryCostSum
+      }
+    }).filter(costCategory => !costCategory.isRemoved)
+    console.log(allCostCategoriesWithBalance)
+
+    res.json(allCostCategoriesWithBalance);
+  }
+
   // Получение всех трат: все категории за всё время
+  // Все costs для сцены с историей
   async getAllCosts(req, res) {
     const allCosts = await prisma.cost.findMany({
       include: {
         wallet: true,
+        cost_category: true
       }
     });
     res.json(allCosts)
   }
 
   // Новая затрата
-  async addNewCost(req, res) {
+  addNewCost = async (req, res) => {
     const {categoryId, id: wallet_id, count, name} = req.body
     await prisma.cost.create({
       data: {
@@ -47,44 +74,38 @@ class CostController {
       },
     })
 
-    res.json({status: 'success'})
+    this.getCostCategories(req, res)
+    // res.json({status: 'success'})
   }
 
-  async createCostCategory(req, res) {
+  createCostCategory = async (req, res) => {
     await prisma.cost_category.create({
       data: {
-        cost_category_id: 9,
-        name: 'Спорт',
-        icon: '3'
+        name: req.body.name,
       },
     })
 
-    res.json({status: 'success'})
+    await this.getCostCategories(req, res)
+    // res.json({status: 'success'})
   }
 
-  async getCostCategories(req, res) {
-    const allCostCategories = await prisma.cost_category.findMany();
-    const allCosts = await prisma.cost.findMany()
 
-    // Высчитываем сколько было затрат для каждой категории
-    // Возваращаем дополненный суммой затрат объекты
-    const allCostCategoriesWithBalance = allCostCategories.map((costCategory) => {
-      const categoryCosts = allCosts.filter((cost) => {
-        return cost.cost_category_id === costCategory.cost_category_id
+  deleteCostCategory = async (req, res) => {
+    try {
+      await prisma.cost_category.update({
+        where: {
+          cost_category_id: req.body.categoryId
+        },
+        data: {
+          isRemoved: true,
+        },
       })
+    } catch (e) {
+      console.log('Категория не удалилась')
+      console.log(e)
+    }
 
-      let categoryCostSum = 0;
-      categoryCosts.forEach((cost) => {
-        categoryCostSum += cost.count
-      })
-
-      return {
-        ...costCategory,
-        count: categoryCostSum
-      }
-    })
-
-    res.json(allCostCategoriesWithBalance);
+    await this.getCostCategories(req, res)
   }
 }
 
